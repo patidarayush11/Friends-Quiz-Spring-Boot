@@ -13,12 +13,14 @@ import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.bffquest.entities.Answer;
 import com.bffquest.entities.Dummy;
+import com.bffquest.entities.Friend;
 import com.bffquest.entities.Person;
 import com.bffquest.entities.Question;
 import com.bffquest.service.QuestService;
@@ -44,6 +46,8 @@ public class QuestController {
 		return "register";
 	}
 
+	Map<String, Object> allObjectsMap=new HashMap<>();
+	
 	@PostMapping("/saveDetails")
 	public String saveDetails(@RequestParam("name") String personName, @RequestParam("uname") String username,
 			@RequestParam("passwd") String password, Map<String, Object> model) {
@@ -81,8 +85,8 @@ public class QuestController {
 	
 	
 	@PostMapping("/saveAns")
-	public String saveAns(@RequestParam("1")String colour,@RequestParam("2")String place,@RequestParam("personId") String personId){
-		
+	public ModelAndView saveAns(@RequestParam("1")String colour,@RequestParam("2")String place,@RequestParam("personId") String personId){
+		ModelAndView model = new ModelAndView();
 		ans.setQues_id(1);
 		ans.setAns_id(1);
 		ans.setAns_text(colour);
@@ -97,15 +101,63 @@ public class QuestController {
 		System.out.println(personId);
 		questService.saveAnswers(ans);
 		
-		ModelMap model=new ModelMap();
-		model.put("personId", questService.findPersonById(Integer.parseInt(personId)));
-		
-		return "share";
-		
+		Map<String, Object> allObjectMap=new HashMap<>();
+		allObjectMap.put("personId", questService.findPersonById(Integer.parseInt(personId)));
+		model.addAllObjects(allObjectMap);
+		model.setViewName("share");
+		return model;
 	}
 	
 	
+	@GetMapping("/{id}")
+	public ModelAndView invitedFriendQuestions(@PathVariable("id")String id) {
+		
+		ModelAndView model =new ModelAndView();
+		List<Question> questionList= new ArrayList<>();
+		questionList=questService.getQuestions();
+		
+		allObjectsMap.put("allQuestions", questionList);
+		
+		allObjectsMap.put("personId",id);
+		
+		model.addAllObjects(allObjectsMap);
+		model.setViewName("friendQuestions");
+		
+		return model;
+		
+		
+	}
 	
+	@PostMapping("/evalScore")
+	public ModelAndView evalScore(@RequestParam("1")String colour,
+									@RequestParam("2")String place,
+									@RequestParam("personId") String personId,
+									@RequestParam("friendName") String friendName) {
+		ModelAndView model=new ModelAndView();
+		System.out.println("Id :" +personId);
+		List<String> friendAnsList=new ArrayList<>();
+		friendAnsList.add(colour);
+		friendAnsList.add(place);
+		
+		Friend friend=new Friend();
+		friend.setName(friendName);
+		friend.setPerson(questService.findPersonById(Integer.parseInt(personId)));
+		int score=questService.evalScore(friendAnsList,Integer.parseInt(personId));
+		
+		System.out.print("Score"+score);
+		friend.setScore(score);
+		questService.addFriendScore(friend);
+		
+		questService.getScoreBoard(Integer.parseInt(personId));
+		allObjectsMap.put("score", score);
+		allObjectsMap.put("friendScores", questService.getScoreBoard(Integer.parseInt(personId)));
+		
+		model.addAllObjects(allObjectsMap);
+		model.setViewName("scoreBoard");
+		return model;
+		
+		
+	}
 	
 	/*
 	 * @PostMapping("/saveDummy") public String saveDummy(@RequestParam("name")

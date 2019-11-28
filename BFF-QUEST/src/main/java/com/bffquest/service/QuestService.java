@@ -9,10 +9,12 @@ import org.springframework.stereotype.Service;
 
 import com.bffquest.entities.Answer;
 import com.bffquest.entities.Dummy;
+import com.bffquest.entities.Friend;
 import com.bffquest.entities.Person;
 import com.bffquest.entities.Question;
 import com.bffquest.repository.AnswerRepository;
 import com.bffquest.repository.DummyRepo;
+import com.bffquest.repository.FriendRepository;
 import com.bffquest.repository.PersonRepository;
 import com.bffquest.repository.QuestionRepository;
 
@@ -36,6 +38,9 @@ public class QuestService {
 	
 	@Autowired
 	Person person;
+	
+	@Autowired
+	FriendRepository friendRepository;
 	
 	public void addPerson(Person person) {
 		personRepository.save(person);
@@ -62,8 +67,39 @@ public class QuestService {
 		
 	}
 	
+	
 	public void addDummy(Dummy dummy) {
 		dummyRepo.save(dummy);
+	}
+
+	public int evalScore(List<String> friendAnsList, int personId) {
+		List<Answer> tmpAnsList=answerRepository.findByPersonAnsbyId(personId);
+		List<String> ansTxt=new ArrayList<>();
+		int score = 0;
+		
+		  
+		  for(Answer a: tmpAnsList) { 
+			  ansTxt.add(a.getAns_text());
+		  }
+		
+		
+		for(int i=0;i<ansTxt.size();i++) {
+			if(ansTxt.get(i).equals(friendAnsList.get(i))) {
+				score++;
+			}
+			else
+				continue;
+		}
+		return score;
+}
+
+	public void addFriendScore(Friend friend) {
+		friendRepository.save(friend);
+	}
+
+	public List<Friend> getScoreBoard(int personId) {
+		List<Friend> friendScores =friendRepository.getFriendScoresByPersonId(personId);
+		return friendScores;
 	}
 
 }
